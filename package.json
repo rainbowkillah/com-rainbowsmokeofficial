@@ -1,0 +1,31 @@
+{
+  "name": "rainbowsmokeofficial-com",
+  "version": "1.0.0",
+  "description": "Official website for Mr. RainbowSmoke - DC native, Systems Engineer, gamer, vlogger, LGBTQ+ content creator",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "kv:create": "bash scripts/create-kv.sh",
+    "d1:create": "bash scripts/create-d1.sh",
+    "d1:migrate": "wrangler d1 execute rainbowsmoke-db --file=./scripts/seed-db.sql"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "personal-brand",
+    "lgbtq",
+    "content-creator",
+    "rainbow-theme"
+  ],
+  "author": "Mr. RainbowSmoke",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.52.1"
+  }
+}

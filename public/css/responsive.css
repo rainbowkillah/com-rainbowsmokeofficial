@@ -1,0 +1,469 @@
+/* ============================================
+   RainbowSmoke Official - Responsive Styles
+   Mobile-First Responsive Design
+   ============================================ */
+
+/* ============================================
+   MOBILE BREAKPOINTS
+   ============================================ */
+
+/* Small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+  /* Typography */
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-cta .btn {
+    width: 100%;
+  }
+
+  /* Navigation */
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .main-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-sm);
+  }
+
+  .main-nav a {
+    font-size: 0.9rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .logo h1 {
+    font-size: 1.25rem;
+  }
+
+  /* Footer */
+  .social-links {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .social-links a {
+    width: 100%;
+  }
+
+  /* Grids */
+  .featured-grid,
+  .social-grid,
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  /* Spacing */
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  section {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .hero,
+  .page-header {
+    padding: var(--spacing-lg) 0;
+  }
+}
+
+/* ============================================
+   TABLET BREAKPOINTS
+   ============================================ */
+
+/* Medium devices (tablets, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  /* Typography */
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
+  }
+
+  /* Navigation */
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .main-nav {
+    justify-content: center;
+  }
+
+  /* Grids */
+  .featured-grid,
+  .social-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Large tablets (768px to 991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  /* Grids */
+  .featured-grid,
+  .social-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Navigation - keep stacked for tablets */
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .main-nav {
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   DESKTOP BREAKPOINTS
+   ============================================ */
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  /* Navigation returns to horizontal layout */
+  .header-content {
+    flex-direction: row;
+  }
+
+  /* Grids */
+  .featured-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .social-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  /* Increased spacing for large screens */
+  :root {
+    --spacing-xl: 5rem;
+  }
+
+  .hero-title {
+    font-size: 4.5rem;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  /* Hide non-essential elements */
+  .site-header,
+  .site-footer,
+  .hero-cta,
+  .btn,
+  .construction-notice {
+    display: none;
+  }
+
+  /* Optimize for print */
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: black;
+    background: white;
+  }
+
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+
+  /* Show URLs for links */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+  }
+
+  /* Remove rainbow gradients for better print quality */
+  .rainbow-gradient,
+  .rainbow-text {
+    background: none;
+    color: black;
+  }
+
+  /* Page breaks */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  section {
+    page-break-inside: avoid;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spinner {
+    animation: none;
+    border-top-color: transparent;
+  }
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+@media (prefers-contrast: high) {
+  :root {
+    --text-dark: #000000;
+    --text-medium: #333333;
+    --bg-white: #ffffff;
+  }
+
+  .btn {
+    border: 2px solid currentColor;
+  }
+
+  .rainbow-text {
+    -webkit-text-fill-color: currentColor;
+    color: var(--text-dark);
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Dark mode styles can be added in future phases
+     For now, keeping light theme for consistency with rainbow brand */
+}
+
+/* ============================================
+   LANDSCAPE ORIENTATION
+   ============================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Reduce vertical spacing on landscape mobile devices */
+  .hero {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  section {
+    padding: var(--spacing-lg) 0;
+  }
+}
+
+/* ============================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets for mobile */
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .main-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Remove hover effects on touch devices */
+  .btn:hover,
+  .main-nav a:hover,
+  .social-links a:hover,
+  .featured-card:hover,
+  .social-card:hover {
+    transform: none;
+  }
+
+  /* Add active states instead */
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .main-nav a:active {
+    background: var(--rainbow-gradient);
+    color: white;
+  }
+}
+
+/* ============================================
+   SCREEN READER ONLY
+   ============================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   FOCUS VISIBLE (KEYBOARD NAVIGATION)
+   ============================================ */
+
+/* Remove default outline */
+*:focus {
+  outline: none;
+}
+
+/* Add custom focus styles for keyboard navigation */
+*:focus-visible {
+  outline: 3px solid var(--rainbow-indigo);
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+.btn:focus-visible {
+  outline: 3px solid var(--rainbow-violet);
+  outline-offset: 4px;
+}
+
+/* ============================================
+   UTILITY CLASSES FOR RESPONSIVE VISIBILITY
+   ============================================ */
+
+/* Hide on mobile */
+@media (max-width: 767.98px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 992px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: none !important;
+}
+
+@media (max-width: 767.98px) {
+  .show-mobile {
+    display: block !important;
+  }
+}
+
+/* Show only on tablet */
+.show-tablet {
+  display: none !important;
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .show-tablet {
+    display: block !important;
+  }
+}
+
+/* Show only on desktop */
+.show-desktop {
+  display: none !important;
+}
+
+@media (min-width: 992px) {
+  .show-desktop {
+    display: block !important;
+  }
+}

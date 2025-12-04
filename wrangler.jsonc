@@ -1,0 +1,129 @@
+{
+  // Cloudflare Workers configuration for rainbowsmokeofficial.com
+  "name": "rainbowsmokeofficial-com",
+  "main": "src/index.js",
+  "compatibility_date": "2025-12-04",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Observability for monitoring and debugging
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  },
+
+  // Static Assets binding for serving HTML/CSS/JS/images
+  "assets": {
+    "directory": "./public/",
+    "binding": "ASSETS"
+  },
+
+  // Workers KV for authentication sessions
+  // Run: wrangler kv namespace create AUTH_KV
+  // Run: wrangler kv namespace create SESSIONS_KV
+  // Then fill in the IDs below
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_KV",
+      "id": "ca1f11867da141fbacdd9f05b844ab53",
+      "preview_id": "86849151266f430a99bab5ad06c7b786"
+    },
+    {
+      "binding": "SESSIONS_KV",
+      "id": "21514fdd1c6b45d696cd0cfb98c1c4cb",
+      "preview_id": "9aa0bd4033e94587b1c4e7193c51f313"
+    }
+  ],
+
+  // D1 database for contact form submissions
+  // Run: wrangler d1 create rainbowsmoke-db
+  // Then fill in the database_id below
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rainbowsmoke-db",
+      "database_id": "415b01fb-4509-4bc2-95b2-e02b53aecca1"
+    }
+  ],
+
+  // R2 bucket for media assets (gallery images, NSFW content)
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "rainbowsmokeofficial-com-media"
+    }
+  ],
+
+  // Analytics Engine for tracking events and metrics
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "com_rainbowsmokeofficial_ae"
+    }
+  ],
+
+  // Service binding to rnbwsmk-ai worker
+  "services": [
+    {
+      "binding": "AI_WORKER",
+      "service": "rnbwsmk-ai"
+    }
+  ],
+
+  // Email Workers for contact form
+  "send_email": [
+    {
+      "name": "CONTACT_EMAIL",
+      "destination_address": "64zgd764sm@privaterelay.appleid.com"
+    }
+  ],
+
+  // Environment variables (non-sensitive)
+  "vars": {
+    "SITE_NAME": "RainbowSmoke Official",
+    "SITE_DOMAIN": "rainbowsmokeofficial.com",
+    "ADMIN_EMAIL": "64zgd764sm@privaterelay.appleid.com",
+    "CLOUDFLARE_ACCOUNT_ID": "7fde695caf9cc41efca391316eb71003",
+    "CLOUDFLARE_IMAGES_HASH": "fc658a5841a38a9489deb99e3fc7c611",
+    "YOUTUBE_OAUTH_CLIENT_ID": "892209285782-ctm4i5g1cefa7iud9s05l4u9lgqq9jec.apps.googleusercontent.com"
+  },
+
+  // Secrets (set via: wrangler secret put SECRET_NAME)
+  // - NSFW_PASSWORD: Password for NSFW members area
+  // - ADMIN_PASSWORD: Password for admin dashboard
+  // - SESSION_SECRET: For signing session cookies
+  // - YOUTUBE_API_KEY: Google API key for YouTube Data API
+  // - YOUTUBE_OAUTH_CLIENT_SECRET: Google OAuth client secret
+
+  // Temporary Durable Objects binding for VisitCounter (will be removed after migration)
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VISIT_COUNTER",
+        "class_name": "VisitCounter",
+        "script_name": "rainbowsmokeofficial-com"
+      }
+    ]
+  },
+
+  // Custom domain routing (configure after deployment)
+  // Uncomment when ready to deploy to production domain
+  "routes": [
+    {
+      "pattern": "rainbowsmokeofficial.com/*",
+      "zone_id": "08799f5ad74531bce78685c902d164ef"
+    },
+    {
+      "pattern": "www.rainbowsmokeofficial.com/*",
+      "zone_id": "08799f5ad74531bce78685c902d164ef"
+    }
+  ]
+}
