@@ -1129,6 +1129,31 @@ select.error {
   margin: 0;
 }
 
+/* Video Cards */
+.gallery-video video {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  background: #000;
+  display: block;
+}
+
+.gallery-video-meta {
+  padding: var(--spacing-md);
+  background: var(--neutral-50);
+  border-top: 1px solid var(--neutral-200);
+}
+
+.gallery-video-meta h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.gallery-video .gallery-meta {
+  font-size: 0.95rem;
+  color: var(--neutral-600);
+}
+
 /* Embed Cards */
 .gallery-embed {
   background: var(--bg-light);

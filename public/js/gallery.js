@@ -33,29 +33,51 @@
       }
 
       const data = await response.json();
-      if (!data.success || !data.media || data.media.length === 0) {
-        console.warn('No R2 media found, using placeholder images');
+      if (!data.success || !data.media) {
+        console.warn('No R2 media payload, using placeholder images');
         return;
       }
 
-      // Get the gallery grid
       const galleryGrid = document.getElementById('gallery-grid');
       if (!galleryGrid) return;
 
-      // Clear placeholder images (keep embeds)
-      const placeholders = galleryGrid.querySelectorAll('.gallery-item[data-type="images"]');
-      placeholders.forEach(p => p.remove());
-
-      // Add R2 images to gallery
       const imageMedia = data.media.filter(m => m.type === 'image');
-      imageMedia.forEach((media, index) => {
-        const fileName = media.key.split('/').pop();
-        const title = fileName.replace(/\.(jpg|jpeg|png|gif|webp)$/i, '').replace(/[-_]/g, ' ');
+      const videoMedia = data.media.filter(m => m.type === 'video');
+      const totalMedia = imageMedia.length + videoMedia.length;
 
+      if (totalMedia === 0) {
+        console.warn('No R2 media found, keeping placeholders');
+        return;
+      }
+
+      // Clear placeholder images (keep embeds)
+      galleryGrid.querySelectorAll('.gallery-item[data-type="images"]').forEach(p => p.remove());
+
+      const insertBeforeFirstEmbed = (node) => {
+        const firstEmbed = galleryGrid.querySelector('.gallery-item[data-type="youtube"], .gallery-item[data-type="twitch"], .gallery-item[data-type="tiktok"]');
+        if (firstEmbed) {
+          galleryGrid.insertBefore(node, firstEmbed);
+        } else {
+          galleryGrid.appendChild(node);
+        }
+      };
+
+      const formatTitle = (key) => {
+        const fileName = key.split('/').pop() || '';
+        return fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim() || 'Untitled';
+      };
+
+      const videoMimeFromKey = (key = '') => {
+        if (key.toLowerCase().endsWith('.webm')) return 'video/webm';
+        if (key.toLowerCase().endsWith('.mov')) return 'video/quicktime';
+        return 'video/mp4';
+      };
+
+      imageMedia.forEach(media => {
+        const title = formatTitle(media.key);
         const galleryItem = document.createElement('div');
         galleryItem.className = 'gallery-item';
         galleryItem.dataset.type = 'images';
-
         galleryItem.innerHTML = `
           <div class="gallery-card gallery-image">
             <img src="${media.url}" alt="${title}" loading="lazy" data-lightbox="gallery">
@@ -65,23 +87,34 @@
             </div>
           </div>
         `;
-
-        // Insert before first embed (or at end)
-        const firstEmbed = galleryGrid.querySelector('.gallery-item[data-type="youtube"]');
-        if (firstEmbed) {
-          galleryGrid.insertBefore(galleryItem, firstEmbed);
-        } else {
-          galleryGrid.appendChild(galleryItem);
-        }
+        insertBeforeFirstEmbed(galleryItem);
       });
 
-      // Re-initialize lightbox for new images
+      videoMedia.forEach(media => {
+        const title = formatTitle(media.key);
+        const galleryItem = document.createElement('div');
+        galleryItem.className = 'gallery-item';
+        galleryItem.dataset.type = 'videos';
+        galleryItem.innerHTML = `
+          <div class="gallery-card gallery-video">
+            <video controls preload="metadata">
+              <source src="${media.url}" type="${videoMimeFromKey(media.key)}">
+              Your browser does not support the video tag.
+            </video>
+            <div class="gallery-video-meta">
+              <h3>${title}</h3>
+              <p class="gallery-meta">🎞️ Stream-ready from R2</p>
+            </div>
+          </div>
+        `;
+        galleryGrid.appendChild(galleryItem);
+      });
+
       initializeLightbox();
-      console.log(`✅ Loaded ${imageMedia.length} images from R2 bucket`);
+      console.log(`✅ Loaded ${imageMedia.length} images and ${videoMedia.length} videos from R2`);
 
     } catch (error) {
       console.error('Error loading R2 gallery media:', error);
-      // Silently fail and use placeholder images
     }
   }
 

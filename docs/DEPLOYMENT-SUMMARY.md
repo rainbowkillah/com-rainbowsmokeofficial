@@ -126,21 +126,14 @@ All required secrets are configured in Cloudflare Workers:
 ## Known Issues & Notes
 
 ### Durable Object Migration
-⚠️ **Temporary Workaround Applied**
+✅ **Completed December 5, 2025**
 
-A previous deployment had a `VisitCounter` Durable Object class that was removed. To enable deployment, we temporarily re-added the class:
+The temporary `VisitCounter` Durable Object has been fully removed:
 
-**Files Modified:**
-- `src/index.js`: Added temporary VisitCounter class (lines 8-18)
-- `wrangler.jsonc`: Added temporary durable_objects binding (lines 80-89)
+- `src/index.js` no longer exports the class.
+- `wrangler.jsonc` now contains a migration with `deleted_classes: ["VisitCounter"]` so old instances are cleaned up in production.
 
-**Future Action Required:**
-After Durable Object instances expire or are manually deleted, remove:
-1. The `VisitCounter` class from `src/index.js`
-2. The `durable_objects` binding from `wrangler.jsonc`
-3. Add proper migration with `deleted_classes: ["VisitCounter"]`
-
-This is low priority and does not affect site functionality.
+No further action is required.
 
 ---
 

@@ -5,18 +5,6 @@ import { Hono } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 
-// Temporary Durable Object class for migration
-// This will be removed in the next deployment after migration completes
-export class VisitCounter {
-  constructor(state, env) {
-    this.state = state;
-  }
-
-  async fetch(request) {
-    return new Response('Deprecated', { status: 410 });
-  }
-}
-
 // Initialize Hono app
 const app = new Hono();
 
@@ -146,6 +134,15 @@ function headCommon(title, description = 'DC Native | Systems Engineer | Gamer |
     <meta name="color-scheme" content="light">
     <meta name="format-detection" content="telephone=no">
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNP6EXPRLG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-MNP6EXPRLG');
+    </script>
+
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
@@ -227,6 +224,16 @@ function headCommon(title, description = 'DC Native | Systems Engineer | Gamer |
 
     <title>${title}</title>
   `;
+}
+
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'heic']);
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'mkv']);
+
+function detectMediaTypeFromKey(key = '') {
+  const ext = key.split('.').pop()?.toLowerCase() || '';
+  if (IMAGE_EXTENSIONS.has(ext)) return 'image';
+  if (VIDEO_EXTENSIONS.has(ext)) return 'video';
+  return 'unknown';
 }
 
 // AI Widget script - include on public pages
@@ -466,12 +473,13 @@ app.get('/gallery', (c) => {
         <section class="gallery-content">
           <div class="container">
             <!-- Filter Tabs -->
-            <div class="gallery-filters">
-              <button class="gallery-filter-btn active" data-filter="all">All</button>
-              <button class="gallery-filter-btn" data-filter="images">Images</button>
-              <button class="gallery-filter-btn" data-filter="youtube">YouTube</button>
-              <button class="gallery-filter-btn" data-filter="twitch">Twitch</button>
-              <button class="gallery-filter-btn" data-filter="tiktok">TikTok</button>
+              <div class="gallery-filters">
+                <button class="gallery-filter-btn active" data-filter="all">All</button>
+                <button class="gallery-filter-btn" data-filter="images">Images</button>
+                <button class="gallery-filter-btn" data-filter="videos">Videos</button>
+                <button class="gallery-filter-btn" data-filter="youtube">YouTube</button>
+                <button class="gallery-filter-btn" data-filter="twitch">Twitch</button>
+                <button class="gallery-filter-btn" data-filter="tiktok">TikTok</button>
             </div>
 
             <!-- Gallery Grid -->
@@ -2181,8 +2189,7 @@ app.get('/api/gallery/media', async (c) => {
       url: `/media/${obj.key}`,
       size: obj.size,
       uploaded: obj.uploaded,
-      type: obj.key.includes('/images/') ? 'image' :
-            obj.key.includes('/videos/') ? 'video' : 'unknown'
+      type: detectMediaTypeFromKey(obj.key)
     }));
 
     return c.json({
@@ -2212,8 +2219,7 @@ app.get('/api/nsfw/media', requireAuth('nsfw'), async (c) => {
       url: `/media/${obj.key}`,
       size: obj.size,
       uploaded: obj.uploaded,
-      type: obj.key.includes('/images/') ? 'image' :
-            obj.key.includes('/videos/') ? 'video' : 'unknown'
+      type: detectMediaTypeFromKey(obj.key)
     }));
 
     return c.json({

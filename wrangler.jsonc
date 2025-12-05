@@ -103,16 +103,13 @@
   // - YOUTUBE_API_KEY: Google API key for YouTube Data API
   // - YOUTUBE_OAUTH_CLIENT_SECRET: Google OAuth client secret
 
-  // Temporary Durable Objects binding for VisitCounter (will be removed after migration)
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "VISIT_COUNTER",
-        "class_name": "VisitCounter",
-        "script_name": "rainbowsmokeofficial-com"
-      }
-    ]
-  },
+  // Durable Object migrations
+  "migrations": [
+    {
+      "tag": "2025-12-05-remove-visitcounter",
+      "deleted_classes": ["VisitCounter"]
+    }
+  ],
 
   // Custom domain routing (configure after deployment)
   // Uncomment when ready to deploy to production domain
