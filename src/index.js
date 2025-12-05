@@ -1450,6 +1450,31 @@ app.get('/api/status', (c) => {
 // AI WORKER PROXY ROUTES
 // ============================================
 
+// Proxy WebSocket + HTTP party traffic to AI worker (chat + calendar rooms)
+app.all('/party/*', async (c) => {
+  try {
+    if (!c.env.AI_WORKER) {
+      return c.json({ error: 'AI worker not configured' }, { status: 503 });
+    }
+
+    // Forward the original request (including Upgrade headers) to the AI worker
+    const aiResponse = await c.env.AI_WORKER.fetch(c.req.raw);
+    return aiResponse;
+  } catch (error) {
+    console.error('AI party proxy error:', error);
+
+    if (c.req.header('upgrade')) {
+      // WebSocket upgrade failed – surface a generic 502
+      return new Response('WebSocket proxy error', { status: 502 });
+    }
+
+    return c.json({
+      error: 'Failed to reach AI party endpoint',
+      details: error.message || String(error)
+    }, { status: 500 });
+  }
+});
+
 // Proxy chat requests to AI worker
 app.post('/api/ai/chat', async (c) => {
   try {
