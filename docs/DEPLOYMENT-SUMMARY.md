@@ -1,5 +1,27 @@
 # Deployment Summary - RainbowSmoke Official
 
+## Deployment Date: 2025-12-05
+
+### Status: ✅ SUCCESSFULLY DEPLOYED (Primary + AI Workers)
+
+**Worker Versions**
+- `rainbowsmokeofficial-com`: `b8719970-5df0-4553-ba25-5bd7960d2574`
+- `rnbwsmk-ai`: `84baff6c-c89e-4d27-957d-ac8cb4ab1540`
+
+**Key Changes**
+- Removed the temporary `VisitCounter` Durable Object and shipped a `deleted_classes` migration so Cloudflare cleans up the legacy instances automatically.
+- Embedded the GA4 snippet (`G-MNP6EXPRLG`) in the shared `<head>` template so every route reports analytics.
+- Upgraded gallery media detection to use file extensions, added a “Videos” filter, and render MP4 assets from R2 with proper metadata.
+- Rotated/loaded all Wrangler secrets for both workers (NSFW/ADMIN/SESSION passwords, YouTube + OpenAI for site worker; OpenAI/Anthropic/AI Gateway for AI worker).
+
+**Prod Smoke Tests**
+- `https://rainbowsmokeofficial.com/api/status` → 200 OK (KV/D1/assets healthy).
+- `https://rainbowsmokeofficial.com/api/gallery/media` → 200 OK (11 objects, including `gallery/videos/rnbwsmk.mp4` classified as `video`).
+- `https://rnbwsmk-ai.rainbowsmokeofficial.com/api/status` → 200 OK (chat/vectorize/autorag/calendar advertised).
+- `POST https://rnbwsmk-ai.rainbowsmokeofficial.com/api/vectorize/search` with query “Who is RainbowSmoke?” → 200 OK (context returned from profile/content indexes).
+
+---
+
 ## Deployment Date: 2025-12-04
 
 ### Status: ✅ SUCCESSFULLY DEPLOYED
