@@ -8,7 +8,7 @@ class AIWidget {
   constructor(options = {}) {
     this.options = {
       // Worker URL - will use service binding in production
-      workerUrl: options.workerUrl || 'https://rnbwsmk-ai.rainbowsmokeofficial.workers.dev',
+      workerUrl: options.workerUrl || 'https://rnbwsmk-ai.64zgd764sm.workers.dev',
 
       // Widget position
       position: options.position || 'bottom-right',

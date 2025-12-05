@@ -233,7 +233,7 @@ function headCommon(title, description = 'DC Native | Systems Engineer | Gamer |
 function renderAIWidget() {
   return `
     <!-- AI Chat Widget -->
-    <div data-ai-widget data-worker-url="https://rnbwsmk-ai.rainbowsmokeofficial.workers.dev" data-position="bottom-right"></div>
+    <div data-ai-widget data-worker-url="https://rnbwsmk-ai.64zgd764sm.workers.dev" data-position="bottom-right"></div>
     <script src="/js/ai-widget.js"></script>
   `;
 }
@@ -904,7 +904,7 @@ app.get('/chat', (c) => {
         </div>
         <div class="chat-iframe-container">
           <iframe
-            src="https://rnbwsmk-ai.rainbowsmokeofficial.workers.dev"
+            src="https://rnbwsmk-ai.64zgd764sm.workers.dev"
             title="AI Chat Assistant"
             allow="clipboard-write"
           ></iframe>
