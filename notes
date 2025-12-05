@@ -1,0 +1,138 @@
+[wrangler:info] Ready on http://localhost:8787
+[wrangler:info] GET / 304 Not Modified (381ms)
+[wrangler:info] GET /dist/index.js 200 OK (2ms)
+[wrangler:info] GET /assets/logo.svg 304 Not Modified (4ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+[wrangler:info] GET / 304 Not Modified (2ms)
+[wrangler:info] GET /dist/index.js 304 Not Modified (2ms)
+[wrangler:info] GET /assets/logo.svg 304 Not Modified (2ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+[wrangler:info] GET /api/status 200 OK (5ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+[wrangler:info] GET /dist/index.js 304 Not Modified (2ms)
+[wrangler:info] GET /assets/logo.svg 304 Not Modified (3ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+[wrangler:info] GET /health 200 OK (2ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+[wrangler:info] GET /dist/index.js 304 Not Modified (2ms)
+[wrangler:info] GET /assets/logo.svg 304 Not Modified (2ms) `Sec-Fetch-Mode: navigate` header present - using `not_found_handling` behavior
+
+
+ ⛅️ wrangler 4.52.1 (update available 4.53.0)
+─────────────────────────────────────────────
+Your Worker has access to the following bindings:
+Binding                        Resource                    Mode
+env.VISIT_COUNTER              Durable Object              local [not connected]
+  VisitCounter, defined in rainbowsmokeofficial-com
+env.AUTH_KV                    KV Namespace                local
+  86849151266f430a99bab5ad06c7b786
+env.SESSIONS_KV                KV Namespace                local
+  9aa0bd4033e94587b1c4e7193c51f313
+env.CONTACT_EMAIL              Send Email                  local
+  64zgd764sm@privaterelay.appleid.com
+env.DB                         D1 Database                 local
+  rainbowsmoke-db
+env.MEDIA_BUCKET               R2 Bucket                   local
+  rainbowsmokeofficial-com-media
+env.AI_WORKER                  Worker                      local [connected]
+  rnbwsmk-ai
+env.ANALYTICS                  Analytics Engine Dataset    local
+  com_rainbowsmokeofficial_ae
+env.ASSETS                     Assets                      local
+env.SITE_NAME                  Environment Variable        local
+  "RainbowSmoke Official"
+env.SITE_DOMAIN                Environment Variable        local
+  "rainbowsmokeofficial.com"
+env.ADMIN_EMAIL                Environment Variable        local
+  "64zgd764sm@privaterelay.appleid.com"
+env.CLOUDFLARE_ACCOUNT_ID      Environment Variable        local
+  "7fde695caf9cc41efca391316eb71003"
+env.CLOUDFLARE_IMAGES_HASH     Environment Variable        local
+  "fc658a5841a38a9489deb99e3fc7c611"
+env.YOUTUBE_OAUTH_CLIENT_ID    Environment Variable        local
+  "892209285782-ctm4i5g1cefa7iud9s05l4u9..."
+
+
+Service bindings, Durable Object bindings, and Tail consumers connect to other wrangler or vite dev processes running locally, with their connection status indicated by [connected] or [not connected]. For more details, refer to https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/#local-development
+
+╭──────────────────────────────────────────────────────────────────────╮
+│  [b] open a browser [d] open devtools [c] clear console [x] to exit  │
+╰──────────────────────────────────────────────────────────────────────╯
+⎔ Starting local server...
+[wrangler:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-12-02",
+but you've requested "2025-12-04". Falling back to "2025-12-02"...
+Features enabled by your requested compatibility date may not be available.
+Upgrade to `wrangler@4.53.0` to remove this warning.
+⎔ Connection status updated
+Your Worker has access to the following bindings:
+Binding                        Resource                    Mode
+env.VISIT_COUNTER              Durable Object              local [not connected]
+  VisitCounter, defined in rainbowsmokeofficial-com
+env.AUTH_KV                    KV Namespace                local
+  86849151266f430a99bab5ad06c7b786
+env.SESSIONS_KV                KV Namespace                local
+  9aa0bd4033e94587b1c4e7193c51f313
+env.CONTACT_EMAIL              Send Email                  local
+  64zgd764sm@privaterelay.appleid.com
+env.DB                         D1 Database                 local
+  rainbowsmoke-db
+env.MEDIA_BUCKET               R2 Bucket                   local
+  rainbowsmokeofficial-com-media
+env.AI_WORKER                  Worker                      local [connected]
+  rnbwsmk-ai
+env.ANALYTICS                  Analytics Engine Dataset    local
+  com_rainbowsmokeofficial_ae
+env.ASSETS                     Assets                      local
+env.SITE_NAME                  Environment Variable        local
+  "RainbowSmoke Official"
+env.SITE_DOMAIN                Environment Variable        local
+  "rainbowsmokeofficial.com"
+env.ADMIN_EMAIL                Environment Variable        local
+  "64zgd764sm@privaterelay.appleid.com"
+env.CLOUDFLARE_ACCOUNT_ID      Environment Variable        local
+  "7fde695caf9cc41efca391316eb71003"
+env.CLOUDFLARE_IMAGES_HASH     Environment Variable        local
+  "fc658a5841a38a9489deb99e3fc7c611"
+env.YOUTUBE_OAUTH_CLIENT_ID    Environment Variable        local
+  "892209285782-ctm4i5g1cefa7iud9s05l4u9..."
+
+[wrangler:info] Ready on http://localhost:8788
+[wrangler:info] GET / 200 OK (15ms)
+[wrangler:info] GET /css/main.css 200 OK (4ms)
+[wrangler:info] GET /css/components.css 200 OK (7ms)
+[wrangler:info] GET /css/responsive.css 200 OK (6ms)
+[wrangler:info] GET /js/main.js 200 OK (6ms)
+[wrangler:info] GET /js/ai-widget.js 200 OK (6ms)
+[wrangler:info] GET /css/ai-widget.css 200 OK (7ms)
+[wrangler:info] GET /favicon.ico 404 Not Found (7ms)
+[wrangler:info] GET /media/gallery/images/favicon.svg 404 Not Found (2ms)
+⎔ Connection status updated
+Your Worker has access to the following bindings:
+Binding                        Resource                    Mode
+env.VISIT_COUNTER              Durable Object              local [connected]
+  VisitCounter, defined in rainbowsmokeofficial-com
+env.AUTH_KV                    KV Namespace                local
+  86849151266f430a99bab5ad06c7b786
+env.SESSIONS_KV                KV Namespace                local
+  9aa0bd4033e94587b1c4e7193c51f313
+env.CONTACT_EMAIL              Send Email                  local
+  64zgd764sm@privaterelay.appleid.com
+env.DB                         D1 Database                 local
+  rainbowsmoke-db
+env.MEDIA_BUCKET               R2 Bucket                   local
+  rainbowsmokeofficial-com-media
+env.AI_WORKER                  Worker                      local [not connected]
+  rnbwsmk-ai
+env.ANALYTICS                  Analytics Engine Dataset    local
+  com_rainbowsmokeofficial_ae
+env.ASSETS                     Assets                      local
+env.SITE_NAME                  Environment Variable        local
+  "RainbowSmoke Official"
+env.SITE_DOMAIN                Environment Variable        local
+  "rainbowsmokeofficial.com"
+env.ADMIN_EMAIL                Environment Variable        local
+  "64zgd764sm@privaterelay.appleid.com"
+env.CLOUDFLARE_ACCOUNT_ID      Environment Variable        local
+  "7fde695caf9cc41efca391316eb71003"
+env.CLOUDFLARE_IMAGES_HASH     Environment Variable        local
+  "fc658a5841a38a9489deb99e3fc7c611"
+env.YOUTUBE_OAUTH_CLIENT_ID    Environment Variable        local
+  "892209285782-ctm4i5g1cefa7iud9s05l4u9..."
+
+⎔ Shutting down local server...
+dfox@rnbwsmkllc-pc:~/projects/www/com-rainbowsmokeofficial$ 
