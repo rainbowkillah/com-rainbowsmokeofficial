@@ -1,6 +1,7 @@
 {
   // Cloudflare Workers configuration for rainbowsmokeofficial.com
   "name": "rainbowsmokeofficial-com",
+  "account_id": "7fde695caf9cc41efca391316eb71003",
   "main": "src/index.js",
   "compatibility_date": "2025-12-04",
   "compatibility_flags": ["nodejs_compat"],
