@@ -39,7 +39,8 @@ com-rainbowsmokeofficial/
 │   ├── create-d1.sh          # Create D1 database
 │   └── deploy.sh             # Deployment helper
 ├── docs/
-│   └── DEPLOYMENT.md         # Deployment guide
+│   ├── DEPLOYMENT-SUMMARY.md # Recent deploy notes
+│   └── D1-MIGRATION-2025-12-05.md # D1 upgrade runbook
 ├── wrangler.jsonc            # Cloudflare Workers config
 └── package.json              # Dependencies
 ```
@@ -90,6 +91,23 @@ npm run dev
 
 - **Name**: `rainbowsmoke-db`
 - **ID**: `415b01fb-4509-4bc2-95b2-e02b53aecca1`
+
+#### Migrations
+
+- `npm run d1:migrate` – recreates the local database using `scripts/seed-db.sql` (drops/rebuilds contacts, sessions, gallery tables, plus helper views).
+- Production/remote upgrade: apply `scripts/migrations/2025-12-05-upgrade-contacts.sql` once to promote the legacy `name/subject` schema to the new multi-field schema:
+
+```bash
+# local dry run
+npx wrangler d1 execute rainbowsmoke-db --file=./scripts/migrations/2025-12-05-upgrade-contacts.sql
+
+# production (requires valid API token)
+npx wrangler d1 execute rainbowsmoke-db \
+  --remote \
+  --file=./scripts/migrations/2025-12-05-upgrade-contacts.sql
+```
+
+> **Note:** The migration keeps existing rows by splitting the legacy `name` field into first/last names and moves the old `subject` field into `admin_notes`. Take a snapshot/backup before running against production.
 
 ### Environment Variables
 

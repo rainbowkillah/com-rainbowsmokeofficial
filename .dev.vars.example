@@ -1,0 +1,58 @@
+# Copy this file to .dev.vars (same directory) and fill each value with the rotated credential.
+# Never commit the populated .dev.vars file; it is gitignored.
+
++# Cloudflare account & API access
+CLOUDFLARE_ACCOUNT_ID="cf_account_id"
+CLOUDFLARE_EMAIL="user@example.com"
+CLOUDFLARE_API_TOKEN="cf_api_token_with_d1_edit"
+CLOUDFLARE_API_KEY="cf_global_api_key"
+CLOUDFLARE_CA_KEY="cf_ca_key"
+ADMIN_API_TOKEN="cf_admin_api_token"
+ACCESS_CODE_SALT="random_salt"
+ORIGIN_API_KEY="cf_origin_api_key"
+
+# Zones
+ZONE_ID_DEV="cf_zone_id_dev"
+ZONE_ID_PRD="cf_zone_id_prd"
+
+# Worker tokens (least-privilege per script)
+API_TOKEN_DEV="wrangler_api_token_dev"
+WORKER_TOKEN_DEV="worker_api_token_dev"
+WORKER_BUILD_API_DEV="worker_build_api_token_dev"
+
+# Cloudflare Images / R2
+IMAGES_ACCOUNT_ID="cf_images_account_id"
+IMAGES_ACCOUNT_HASH="cf_images_hash"
+IMAGEDELIVERY_URL="https://imagedelivery.net/<account>/<image>/<variant>"
+S3_API_URL="https://<account>.r2.cloudflarestorage.com"
+CLOUDFLARE_R2_TOKEN="cf_r2_token"
+ACCESS_KEY_ID="r2_access_key_id"
+SECRET_ACCESS_KEY="r2_secret_access_key"
+MEDIA_BUCKET="rainbowsmokeofficial-com-media"
+
+# Analytics / AI
+AI_GATEWAY_TOKEN="cf_ai_gateway_token"
+CF_AIG_TOKEN="cf_workers_ai_token"
+ADOBE_FONTS_API="adobe_fonts_api_token"
+
+# Third-party APIs
+GITHUB_TOKEN="github_pat_for_ci"
+GITHUB_PAT="github_pat_for_cli"
+TWITCH_CLIENT_ID="twitch_client_id"
+TWITCH_CLIENT_SECRET="twitch_client_secret"
+TWITCH_USER_NAME="rainbowsmoke_us"
+YOUTUBE_API_KEY="youtube_api_key"
+YOUTUBE_OAUTH_CLIENT_ID="892209285782-ctm4i5g1cefa7iud9s05l4u9lgqq9jec.apps.googleusercontent.com"
+YOUTUBE_OAUTH_CLIENT_SECRET="youtube_oauth_client_secret"
+OPENAI_TOKEN="openai_service_account_token"
+
+# Worker runtime secrets (also set via `wrangler secret put ...` for production)
+NSFW_PASSWORD="set_via_wrangler_secret"
+ADMIN_PASSWORD="set_via_wrangler_secret"
+SESSION_SECRET="set_via_wrangler_secret"
+
+# Misc metadata
+SITE_NAME="RainbowSmoke Official"
+SITE_DOMAIN="rainbowsmokeofficial.com"
+ADMIN_EMAIL="64zgd764sm@privaterelay.appleid.com"
+CLOUDFLARE_IMAGES_HASH="fc658a5841a38a9489deb99e3fc7c611"
