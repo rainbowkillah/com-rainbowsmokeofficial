@@ -158,6 +158,31 @@ npm run deploy
 6. **NSFW Members** (`/nsfw`) - Password-protected adult content links
 7. **Admin Dashboard** (`/admin/dashboard`) - Manage contact submissions
 
+## 🔐 Environment Hub (`/admin/env-hub`)
+
+An internal-only dashboard that mirrors the Notion "Environment Config Hub" in a D1 database so rotations live inside Cloudflare Workers.
+
+- **Inventory**: `/api/admin/env/items` exposes everything recorded in the `environment_items` table with derived health states (healthy, due soon, past due). Filters cover status, risk, storage, and service area.
+- **Rotation logging**: `/api/admin/env/items/:id/rotation` appends to `environment_rotation_logs` and automatically updates the parent record's `last_rotated_at`, status, and verification state.
+- **Activity + history**: `/api/admin/env/rotations/recent` feeds the sidebar while `/api/admin/env/items/:id/rotations` powers the per-record history list.
+
+### Database tables
+
+The Env Hub lives inside the existing `rainbowsmoke-db` D1 instance:
+
+| Table/View | Purpose |
+|------------|---------|
+| `environment_items` | Canonical metadata for each variable/secret (key name, storage surface, owner, cadence, risk, etc.). |
+| `environment_rotation_logs` | Append-only log capturing who rotated what, when, and via which channel. |
+| `environment_items_with_health` | View adding derived fields (`rotation_due_at`, `rotation_health`, last rotation log). |
+
+### Migrating existing databases
+
+1. **Local** – `npm run d1:migrate` drops/recreates everything from `scripts/seed-db.sql` (contacts + Env Hub).
+2. **Remote upgrade** – run `npx wrangler d1 execute rainbowsmoke-db --remote --file=./scripts/migrations/2025-12-06-env-hub.sql` after taking a snapshot.
+
+See [`docs/ENV-HUB.md`](../../docs/ENV-HUB.md) for workflow details, rotation-playbook, and backlog items.
+
 ## 🔐 Authentication
 
 - **NSFW Area**: Password-protected with 24-hour session

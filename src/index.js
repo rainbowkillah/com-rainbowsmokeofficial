@@ -91,6 +91,101 @@ function requireAuth(userType) {
 }
 
 // ============================================
+// ENVIRONMENT HUB CONSTANTS & HELPERS
+// ============================================
+
+const SECRET_TYPES = ['api_token', 'password', 'oauth_client', 'webhook', 'kv_namespace', 'r2_token', 'misc'];
+const STORAGE_SURFACES = ['wrangler_secret', 'kv', '.dev.vars', 'r2', 'vectorize', 'email_worker', 'other'];
+const SENSITIVITY_LEVELS = ['public', 'internal', 'secret', 'critical'];
+const STATUS_OPTIONS = ['active', 'needs_rotation', 'rotating', 'scheduled', 'revoked', 'decommissioned'];
+const RISK_LEVELS = ['low', 'medium', 'high', 'critical'];
+const VERIFICATION_STATES = ['verified', 'drifted', 'unknown'];
+const ROTATION_STATUS_OPTIONS = ['success', 'partial', 'failed', 'scheduled'];
+const ROTATION_CHANNELS = ['manual', 'wrangler', 'automation', 'terraform', 'api'];
+
+const RISK_ORDER_SQL = `CASE risk_level
+  WHEN 'critical' THEN 4
+  WHEN 'high' THEN 3
+  WHEN 'medium' THEN 2
+  WHEN 'low' THEN 1
+  ELSE 0
+END`;
+
+function parseStringArray(value, fallback = []) {
+  if (!value && value !== '') {
+    return fallback;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => String(entry).trim())
+      .filter((entry) => entry.length > 0);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  }
+  return fallback;
+}
+
+function normalizeDateInput(value) {
+  if (!value) {
+    return null;
+  }
+  if (value === 'now') {
+    return new Date().toISOString();
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed.toISOString();
+}
+
+function coerceInteger(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function safeJsonParse(value, fallback = []) {
+  if (!value) {
+    return fallback;
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch (err) {
+    console.warn('Failed to parse JSON field', err);
+    return fallback;
+  }
+}
+
+function ensureEnum(value, allowed, fallback) {
+  if (!value) {
+    return fallback;
+  }
+  return allowed.includes(value) ? value : fallback;
+}
+
+function mapEnvItem(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    ...row,
+    environments: safeJsonParse(row.environments, []),
+    tags: safeJsonParse(row.tags, []),
+    rotation_frequency_days: row.rotation_frequency_days != null ? Number(row.rotation_frequency_days) : null,
+    days_until_due: row.days_until_due != null ? Number(row.days_until_due) : null,
+    last_rotation_log_id: row.last_rotation_log_id != null ? Number(row.last_rotation_log_id) : null
+  };
+}
+
+// ============================================
 // HTML TEMPLATE HELPERS
 // ============================================
 
@@ -1360,6 +1455,16 @@ app.get('/admin/dashboard', requireAuth('admin'), (c) => {
               </div>
             </div>
 
+            <div class="info-card env-hub-card">
+              <div>
+                <h3>Environment Hub</h3>
+                <p>Track environment variables, rotation cadences, and owners in one place.</p>
+              </div>
+              <div>
+                <a href="/admin/env-hub" class="btn btn-primary btn-sm">Open Hub</a>
+              </div>
+            </div>
+
             <!-- Filters and Actions -->
             <div class="dashboard-toolbar">
               <div class="filter-group">
@@ -1407,6 +1512,300 @@ app.get('/admin/dashboard', requireAuth('admin'), (c) => {
       <script src="/js/main.js"></script>
       <script src="/js/auth.js"></script>
       <script src="/js/admin.js"></script>
+    </body>
+    </html>
+  `);
+});
+
+// Environment Hub dashboard (protected)
+app.get('/admin/env-hub', requireAuth('admin'), (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      ${headCommon('Environment Hub - RainbowSmoke Official', 'Metadata + rotation tracker for secrets and environment variables')}
+    </head>
+    <body>
+      ${renderHeader()}
+
+      <main class="main-content">
+        <section class="page-header rainbow-gradient">
+          <div class="container page-header-flex">
+            <div>
+              <h1>🗂️ Environment Hub</h1>
+              <p>Inventory + rotation tracker for secrets, tokens, and shared configuration.</p>
+            </div>
+            <div class="page-header-actions">
+              <a href="/admin/dashboard" class="btn btn-secondary btn-sm">↩ Back to Admin</a>
+              <button onclick="logout('admin')" class="btn btn-secondary btn-sm">Logout</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-content env-hub">
+          <div class="container">
+            <div class="env-stats-grid" id="env-stats-grid">
+              <div class="env-stat-card" data-stat="total">
+                <h3>Total Records</h3>
+                <p class="stat-number" id="env-total">0</p>
+                <small>All tracked keys</small>
+              </div>
+              <div class="env-stat-card" data-stat="healthy">
+                <h3>Healthy</h3>
+                <p class="stat-number" id="env-healthy">0</p>
+                <small>Current & verified</small>
+              </div>
+              <div class="env-stat-card warning" data-stat="due-soon">
+                <h3>Due Soon</h3>
+                <p class="stat-number" id="env-due-soon">0</p>
+                <small>Rotation within 14 days</small>
+              </div>
+              <div class="env-stat-card danger" data-stat="past-due">
+                <h3>Past Due / Needs Action</h3>
+                <p class="stat-number" id="env-past-due">0</p>
+                <small>Rotate now</small>
+              </div>
+              <div class="env-stat-card neutral" data-stat="unverified">
+                <h3>Unverified</h3>
+                <p class="stat-number" id="env-unverified">0</p>
+                <small>Check for drift</small>
+              </div>
+            </div>
+
+            <div class="env-toolbar">
+              <div class="env-filters">
+                <label>
+                  Status
+                  <select id="env-status-filter" class="form-input">
+                    <option value="">All</option>
+                    ${STATUS_OPTIONS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                  </select>
+                </label>
+                <label>
+                  Risk
+                  <select id="env-risk-filter" class="form-input">
+                    <option value="">All</option>
+                    ${RISK_LEVELS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                  </select>
+                </label>
+                <label>
+                  Storage Surface
+                  <select id="env-storage-filter" class="form-input">
+                    <option value="">All</option>
+                    ${STORAGE_SURFACES.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                  </select>
+                </label>
+                <label>
+                  Service Area
+                  <input type="text" id="env-service-filter" class="form-input" placeholder="ai-worker, marketing, ...">
+                </label>
+                <button id="env-reset-filters" class="btn btn-secondary btn-sm">Reset Filters</button>
+              </div>
+              <div class="env-actions">
+                <button id="env-refresh" class="btn btn-secondary btn-sm">Refresh</button>
+              </div>
+            </div>
+
+            <div class="env-layout">
+              <div class="env-table-card">
+                <div class="table-container env-table-wrapper">
+                  <table class="contacts-table env-table">
+                    <thead>
+                      <tr>
+                        <th>Key</th>
+                        <th>Owner</th>
+                        <th>Storage</th>
+                        <th>Risk</th>
+                        <th>Status</th>
+                        <th>Rotation</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="env-table-body">
+                      <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">Loading environment inventory...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="table-footer">
+                  <p id="env-table-status">Pulling latest data...</p>
+                </div>
+                <div class="env-history-panel">
+                  <div class="env-history-header">
+                    <h3>Rotation History</h3>
+                    <span id="env-history-label">Select a record to view history</span>
+                  </div>
+                  <ul id="env-history-list" class="env-activity-list">
+                    <li class="empty">No record selected.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="env-side-panel">
+                <div class="panel-card">
+                  <h3 id="env-form-title">Add Record</h3>
+                  <form id="env-item-form">
+                    <input type="hidden" id="env-item-id">
+                    <div class="form-group">
+                      <label>Key Name *</label>
+                      <input type="text" id="env-key-name" class="form-input" required placeholder="OPENAI_API_KEY">
+                    </div>
+                    <div class="form-group">
+                      <label>Display Name *</label>
+                      <input type="text" id="env-display-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Description</label>
+                      <textarea id="env-description" class="form-input" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                      <label>Service Area</label>
+                      <input type="text" id="env-service-area" class="form-input" placeholder="ai-worker">
+                    </div>
+                    <div class="form-row">
+                      <label>Owner Team</label>
+                      <input type="text" id="env-owner-team" class="form-input" placeholder="Platform Ops">
+                    </div>
+                    <div class="form-row">
+                      <label>Point of Contact</label>
+                      <input type="text" id="env-point-of-contact" class="form-input" placeholder="RainbowSmoke">
+                    </div>
+                    <div class="form-group">
+                      <label>Environments (comma separated)</label>
+                      <input type="text" id="env-environments" class="form-input" placeholder="production, staging">
+                    </div>
+                    <div class="form-row">
+                      <label>Tags</label>
+                      <input type="text" id="env-tags" class="form-input" placeholder="ai, gateway">
+                    </div>
+                    <div class="form-row">
+                      <label>Secret Type</label>
+                      <select id="env-secret-type" class="form-input">
+                        ${SECRET_TYPES.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label>Storage Surface</label>
+                      <select id="env-storage-surface" class="form-input">
+                        ${STORAGE_SURFACES.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Storage Reference (notes only)</label>
+                      <input type="text" id="env-storage-reference" class="form-input" placeholder="wrangler secret OPENAI_API_KEY">
+                    </div>
+                    <div class="form-row">
+                      <label>Sensitivity</label>
+                      <select id="env-sensitivity" class="form-input">
+                        ${SENSITIVITY_LEVELS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label>Risk Level</label>
+                      <select id="env-risk-level" class="form-input">
+                        ${RISK_LEVELS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label>Status</label>
+                      <select id="env-status" class="form-input">
+                        ${STATUS_OPTIONS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label>Verification</label>
+                      <select id="env-verification" class="form-input">
+                        ${VERIFICATION_STATES.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Rotation Frequency (days)</label>
+                      <input type="number" id="env-rotation-frequency" class="form-input" min="7" value="90">
+                    </div>
+                    <div class="form-group">
+                      <label>Last Rotated At (ISO)</label>
+                      <input type="datetime-local" id="env-last-rotated" class="form-input">
+                    </div>
+                    <div class="form-group">
+                      <label>Last Verified At (ISO)</label>
+                      <input type="datetime-local" id="env-last-verified" class="form-input">
+                    </div>
+                    <div class="form-group">
+                      <label>Notes</label>
+                      <textarea id="env-notes" class="form-input" rows="3" placeholder="Add mitigating steps, owners, etc."></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary btn-sm" id="env-save-btn">Save Record</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="env-form-reset">Clear</button>
+                    </div>
+                    <div class="form-feedback" id="env-form-feedback"></div>
+                  </form>
+                </div>
+
+                <div class="panel-card">
+                  <h3>Log Rotation</h3>
+                  <form id="rotation-form">
+                    <div class="form-group">
+                      <label>Environment Item</label>
+                      <select id="rotation-item" class="form-input"></select>
+                    </div>
+                    <div class="form-group">
+                      <label>Rotated At</label>
+                      <input type="datetime-local" id="rotation-date" class="form-input">
+                    </div>
+                    <div class="form-row">
+                      <label>Channel</label>
+                      <select id="rotation-channel" class="form-input">
+                        ${ROTATION_CHANNELS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label>Status</label>
+                      <select id="rotation-status" class="form-input">
+                        ${ROTATION_STATUS_OPTIONS.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Rotated By</label>
+                      <input type="text" id="rotation-user" class="form-input" placeholder="RainbowSmoke">
+                    </div>
+                    <div class="form-group">
+                      <label>Ticket / Runbook URL</label>
+                      <input type="url" id="rotation-ticket" class="form-input" placeholder="https://linear.app/...">
+                    </div>
+                    <div class="form-group">
+                      <label>Storage Reference Snapshot</label>
+                      <input type="text" id="rotation-storage" class="form-input" placeholder="wrangler secret OPENAI_API_KEY updated">
+                    </div>
+                    <div class="form-group">
+                      <label>Notes</label>
+                      <textarea id="rotation-notes" class="form-input" rows="3" placeholder="What changed?"></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary btn-sm">Log Rotation</button>
+                    </div>
+                    <div class="form-feedback" id="rotation-form-feedback"></div>
+                  </form>
+                </div>
+
+                <div class="panel-card">
+                  <h3>Recent Activity</h3>
+                  <ul id="env-activity-list" class="env-activity-list">
+                    <li class="empty">Loading activity…</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      ${renderFooter()}
+
+      <script src="/js/main.js"></script>
+      <script src="/js/auth.js"></script>
+      <script src="/js/env-hub.js"></script>
     </body>
     </html>
   `);
@@ -2011,6 +2410,370 @@ app.post('/api/admin/contacts/:id/approve-nsfw', requireAuth('admin'), async (c)
   } catch (error) {
     console.error('NSFW approval error:', error);
     return c.json({ error: 'Failed to approve NSFW access' }, 500);
+  }
+});
+
+// ============================================
+// ENVIRONMENT HUB API (admin only)
+// ============================================
+
+app.get('/api/admin/env/items', requireAuth('admin'), async (c) => {
+  try {
+    const query = `
+      SELECT *
+      FROM environment_items_with_health
+      ORDER BY ${RISK_ORDER_SQL} DESC,
+        CASE rotation_health
+          WHEN 'past_due' THEN 3
+          WHEN 'due_soon' THEN 2
+          WHEN 'healthy' THEN 1
+          WHEN 'missing' THEN 0
+          ELSE -1
+        END DESC,
+        display_name ASC
+    `;
+
+    const { results } = await c.env.DB.prepare(query).all();
+    const items = (results || []).map(mapEnvItem);
+
+    return c.json({ success: true, items });
+  } catch (error) {
+    console.error('Env items fetch error:', error);
+    return c.json({ error: 'Failed to load environment hub data' }, 500);
+  }
+});
+
+app.get('/api/admin/env/summary', requireAuth('admin'), async (c) => {
+  try {
+    const summaryRow = await c.env.DB.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN rotation_health = 'healthy' THEN 1 ELSE 0 END) AS healthy,
+        SUM(CASE WHEN rotation_health = 'due_soon' THEN 1 ELSE 0 END) AS due_soon,
+        SUM(CASE WHEN rotation_health = 'past_due' OR status = 'needs_rotation' THEN 1 ELSE 0 END) AS past_due,
+        SUM(CASE WHEN verification_status != 'verified' THEN 1 ELSE 0 END) AS unverified,
+        SUM(CASE WHEN status IN ('active', 'scheduled') THEN 1 ELSE 0 END) AS active_records
+      FROM environment_items_with_health
+    `).first();
+
+    const storageBreakdown = await c.env.DB.prepare(`
+      SELECT storage_surface, COUNT(*) AS total
+      FROM environment_items
+      GROUP BY storage_surface
+      ORDER BY total DESC
+    `).all();
+
+    const ownerBreakdown = await c.env.DB.prepare(`
+      SELECT owner_team, COUNT(*) AS total
+      FROM environment_items
+      GROUP BY owner_team
+      ORDER BY total DESC
+    `).all();
+
+    const { results: upcoming } = await c.env.DB.prepare(`
+      SELECT key_name, display_name, rotation_due_at, rotation_health, risk_level, owner_team
+      FROM environment_items_with_health
+      WHERE rotation_health IN ('due_soon', 'past_due')
+      ORDER BY rotation_due_at ASC
+      LIMIT 6
+    `).all();
+
+    return c.json({
+      success: true,
+      summary: summaryRow || {},
+      storageBreakdown: storageBreakdown?.results || [],
+      ownerBreakdown: ownerBreakdown?.results || [],
+      upcoming: upcoming?.map(mapEnvItem) || []
+    });
+  } catch (error) {
+    console.error('Env summary error:', error);
+    return c.json({ error: 'Failed to load environment summary' }, 500);
+  }
+});
+
+app.get('/api/admin/env/rotations/recent', requireAuth('admin'), async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT erl.*, ei.key_name, ei.display_name
+      FROM environment_rotation_logs erl
+      JOIN environment_items ei ON ei.id = erl.env_item_id
+      ORDER BY erl.rotated_at DESC
+      LIMIT 10
+    `).all();
+
+    return c.json({ success: true, rotations: results || [] });
+  } catch (error) {
+    console.error('Env rotation feed error:', error);
+    return c.json({ error: 'Failed to load rotation feed' }, 500);
+  }
+});
+
+app.get('/api/admin/env/items/:id/rotations', requireAuth('admin'), async (c) => {
+  try {
+    const envId = Number(c.req.param('id'));
+    if (!Number.isInteger(envId)) {
+      return c.json({ error: 'Invalid item id' }, 400);
+    }
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT *
+      FROM environment_rotation_logs
+      WHERE env_item_id = ?
+      ORDER BY rotated_at DESC
+    `).bind(envId).all();
+
+    return c.json({ success: true, rotations: results || [] });
+  } catch (error) {
+    console.error('Env rotation history error:', error);
+    return c.json({ error: 'Failed to load rotation history' }, 500);
+  }
+});
+
+app.post('/api/admin/env/items', requireAuth('admin'), async (c) => {
+  try {
+    const data = await c.req.json();
+
+    const keyName = String(data.key_name || '').trim().toUpperCase();
+    if (!keyName) {
+      return c.json({ error: 'Key name is required' }, 400);
+    }
+    if (!/^[A-Z0-9_.-]+$/.test(keyName)) {
+      return c.json({ error: 'Key name must use A-Z, 0-9, underscore, dash, or dot' }, 400);
+    }
+
+    const displayName = String(data.display_name || '').trim();
+    if (!displayName) {
+      return c.json({ error: 'Display name is required' }, 400);
+    }
+
+    const environments = JSON.stringify(parseStringArray(data.environments, []));
+    const tags = JSON.stringify(parseStringArray(data.tags, []));
+    const secretType = ensureEnum(data.secret_type, SECRET_TYPES, 'api_token');
+    const storageSurface = ensureEnum(data.storage_surface, STORAGE_SURFACES, 'wrangler_secret');
+    const sensitivity = ensureEnum(data.sensitivity, SENSITIVITY_LEVELS, 'secret');
+    const status = ensureEnum(data.status, STATUS_OPTIONS, 'active');
+    const riskLevel = ensureEnum(data.risk_level, RISK_LEVELS, 'medium');
+    const verificationStatus = ensureEnum(data.verification_status, VERIFICATION_STATES, 'unknown');
+    const rotationFrequency = Math.max(7, coerceInteger(data.rotation_frequency_days, 90));
+    const lastRotatedAt = normalizeDateInput(data.last_rotated_at);
+    const lastVerifiedAt = normalizeDateInput(data.last_verified_at);
+
+    const stmt = c.env.DB.prepare(`
+      INSERT INTO environment_items (
+        key_name, display_name, description, service_area, environments,
+        secret_type, sensitivity, storage_surface, storage_reference,
+        owner_team, point_of_contact, rotation_frequency_days,
+        last_rotated_at, last_verified_at, verification_status,
+        status, risk_level, tags, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    await stmt.bind(
+      keyName,
+      displayName,
+      data.description || null,
+      String(data.service_area || 'infrastructure').trim(),
+      environments,
+      secretType,
+      sensitivity,
+      storageSurface,
+      data.storage_reference || null,
+      String(data.owner_team || 'platform').trim(),
+      data.point_of_contact || null,
+      rotationFrequency,
+      lastRotatedAt,
+      lastVerifiedAt,
+      verificationStatus,
+      status,
+      riskLevel,
+      tags,
+      data.notes || null
+    ).run();
+
+    const created = await c.env.DB.prepare(`
+      SELECT * FROM environment_items_with_health WHERE key_name = ?
+    `).bind(keyName).first();
+
+    return c.json({ success: true, item: mapEnvItem(created) }, 201);
+  } catch (error) {
+    console.error('Env item create error:', error);
+    if (String(error.message || '').includes('UNIQUE constraint failed')) {
+      return c.json({ error: 'Key already exists' }, 409);
+    }
+    return c.json({ error: 'Failed to create environment record' }, 500);
+  }
+});
+
+app.put('/api/admin/env/items/:id', requireAuth('admin'), async (c) => {
+  try {
+    const envId = Number(c.req.param('id'));
+    if (!Number.isInteger(envId)) {
+      return c.json({ error: 'Invalid item id' }, 400);
+    }
+
+    const data = await c.req.json();
+    const displayName = String(data.display_name || '').trim();
+    if (!displayName) {
+      return c.json({ error: 'Display name is required' }, 400);
+    }
+
+    const environments = JSON.stringify(parseStringArray(data.environments, []));
+    const tags = JSON.stringify(parseStringArray(data.tags, []));
+    const secretType = ensureEnum(data.secret_type, SECRET_TYPES, 'api_token');
+    const storageSurface = ensureEnum(data.storage_surface, STORAGE_SURFACES, 'wrangler_secret');
+    const sensitivity = ensureEnum(data.sensitivity, SENSITIVITY_LEVELS, 'secret');
+    const status = ensureEnum(data.status, STATUS_OPTIONS, 'active');
+    const riskLevel = ensureEnum(data.risk_level, RISK_LEVELS, 'medium');
+    const verificationStatus = ensureEnum(data.verification_status, VERIFICATION_STATES, 'unknown');
+    const rotationFrequency = Math.max(7, coerceInteger(data.rotation_frequency_days, 90));
+    const lastRotatedAt = normalizeDateInput(data.last_rotated_at);
+    const lastVerifiedAt = normalizeDateInput(data.last_verified_at);
+
+    const stmt = c.env.DB.prepare(`
+      UPDATE environment_items
+      SET display_name = ?,
+          description = ?,
+          service_area = ?,
+          environments = ?,
+          secret_type = ?,
+          sensitivity = ?,
+          storage_surface = ?,
+          storage_reference = ?,
+          owner_team = ?,
+          point_of_contact = ?,
+          rotation_frequency_days = ?,
+          last_rotated_at = ?,
+          last_verified_at = ?,
+          verification_status = ?,
+          status = ?,
+          risk_level = ?,
+          tags = ?,
+          notes = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+
+    const updateResult = await stmt.bind(
+      displayName,
+      data.description || null,
+      String(data.service_area || 'infrastructure').trim(),
+      environments,
+      secretType,
+      sensitivity,
+      storageSurface,
+      data.storage_reference || null,
+      String(data.owner_team || 'platform').trim(),
+      data.point_of_contact || null,
+      rotationFrequency,
+      lastRotatedAt,
+      lastVerifiedAt,
+      verificationStatus,
+      status,
+      riskLevel,
+      tags,
+      data.notes || null,
+      envId
+    ).run();
+
+    if (!updateResult || updateResult.success === false) {
+      return c.json({ error: 'Failed to update record' }, 400);
+    }
+
+    const updated = await c.env.DB.prepare(`
+      SELECT * FROM environment_items_with_health WHERE id = ?
+    `).bind(envId).first();
+
+    if (!updated) {
+      return c.json({ error: 'Record not found' }, 404);
+    }
+
+    return c.json({ success: true, item: mapEnvItem(updated) });
+  } catch (error) {
+    console.error('Env item update error:', error);
+    return c.json({ error: 'Failed to update environment record' }, 500);
+  }
+});
+
+app.post('/api/admin/env/items/:id/rotation', requireAuth('admin'), async (c) => {
+  try {
+    const envId = Number(c.req.param('id'));
+    if (!Number.isInteger(envId)) {
+      return c.json({ error: 'Invalid item id' }, 400);
+    }
+
+    const target = await c.env.DB.prepare('SELECT id FROM environment_items WHERE id = ?').bind(envId).first();
+    if (!target) {
+      return c.json({ error: 'Environment record not found' }, 404);
+    }
+
+    const data = await c.req.json();
+    const rotationStatus = ensureEnum(data.rotation_status, ROTATION_STATUS_OPTIONS, 'success');
+    const rotationChannel = ensureEnum(data.rotation_channel, ROTATION_CHANNELS, 'manual');
+    const rotatedAt = normalizeDateInput(data.rotated_at) || new Date().toISOString();
+    const rotatedBy = data.rotated_by ? String(data.rotated_by).trim() : null;
+    const summary = data.summary || data.notes || null;
+
+    const stmt = c.env.DB.prepare(`
+      INSERT INTO environment_rotation_logs (
+        env_item_id, rotated_at, rotated_by, rotation_channel, rotation_status,
+        ticket_url, summary, storage_reference_snapshot
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    await stmt.bind(
+      envId,
+      rotatedAt,
+      rotatedBy,
+      rotationChannel,
+      rotationStatus,
+      data.ticket_url || null,
+      summary,
+      data.storage_reference_snapshot || null
+    ).run();
+
+    let derivedStatus = 'active';
+    if (rotationStatus === 'failed') {
+      derivedStatus = 'needs_rotation';
+    } else if (rotationStatus === 'scheduled') {
+      derivedStatus = 'scheduled';
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE environment_items
+      SET last_rotated_at = ?,
+          last_verified_at = CASE WHEN ? = 'success' THEN ? ELSE last_verified_at END,
+          status = ?,
+          verification_status = CASE WHEN ? = 'success' THEN 'verified' ELSE verification_status END,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      rotatedAt,
+      rotationStatus,
+      rotatedAt,
+      derivedStatus,
+      rotationStatus,
+      envId
+    ).run();
+
+    const updated = await c.env.DB.prepare(`
+      SELECT * FROM environment_items_with_health WHERE id = ?
+    `).bind(envId).first();
+
+    const { results: rotations } = await c.env.DB.prepare(`
+      SELECT * FROM environment_rotation_logs
+      WHERE env_item_id = ?
+      ORDER BY rotated_at DESC
+      LIMIT 5
+    `).bind(envId).all();
+
+    return c.json({
+      success: true,
+      item: mapEnvItem(updated),
+      rotations: rotations || []
+    });
+  } catch (error) {
+    console.error('Env rotation log error:', error);
+    return c.json({ error: 'Failed to log rotation' }, 500);
   }
 });
 
