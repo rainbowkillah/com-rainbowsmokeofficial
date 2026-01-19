@@ -23,7 +23,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "hono": "^4.0.0"
+    "hono": "^4.11.4"
   },
   "devDependencies": {
     "wrangler": "^4.52.1"
